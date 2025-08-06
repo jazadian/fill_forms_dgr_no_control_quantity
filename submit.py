@@ -179,12 +179,24 @@ def submit_form_and_generate_talon(driver, bucket_id, bucket_type):
             client = MongoClient(os.environ.get('MONGODB_URI'))
             db = client['production']
             collection_status = db['status']
-            status_doc = {
-                "id_bucket": bucket_id,
-                "description": "pdf_downloaded",
-                "createdAt": datetime.utcnow()
-            }
-            result = collection_status.insert_one(status_doc)
+            
+            waiting_lambda_doc = collection_status.find_one({
+            "id_bucket": bucket_id,
+            "description": "waiting_lambda"
+            })
+            
+            if not waiting_lambda_doc:
+                # 2. Insertar waiting_lambda con createdAt un poco antes que pdf_downloaded
+                waiting_time = datetime.utcnow() - timedelta(seconds=3)
+                status_waiting = {
+                    "id_bucket": bucket_id,
+                    "description": "waiting_lambda",
+                    "createdAt": waiting_time
+                }
+                collection_status.insert_one(status_waiting)
+                logger.info(f"Inserted waiting_lambda status for bucket_id {bucket_id}")
+
+            
             logger.info(f"Inserted document en status con id: {result.inserted_id}")
         except Exception as e:
             logger.error(f"ERROR al subir el PDF a S3 o insertar status: {e}")
@@ -430,8 +442,24 @@ def submit_form_and_generate_talon(driver, bucket_id, bucket_type):
                     client = MongoClient(os.environ.get('MONGODB_URI'))
                     db = client['production']
                     collection_status = db['status_ampliacion']
+                    
+                    waiting_lambda_doc = collection_status.find_one({
+                    "id_ampliacion": bucket_id,
+                    "description": "waiting_lambda"
+                    })
+                    if not waiting_lambda_doc:
+                        # 2. Insertar waiting_lambda con createdAt un poco antes que pdf_downloaded
+                        waiting_time = datetime.utcnow() - timedelta(seconds=3)
+                        status_waiting = {
+                            "id_ampliacion": bucket_id,
+                            "description": "waiting_lambda",
+                            "createdAt": waiting_time
+                        }
+                        collection_status.insert_one(status_waiting)
+                        logger.info(f"Inserted waiting_lambda status for id_ampliacion {bucket_id}")
+                    
                     status_doc = {
-                        "id_bucket": bucket_id,
+                        "id_ampliacion": bucket_id,
                         "description": "pdf_downloaded",
                         "createdAt": datetime.utcnow()
                     }
