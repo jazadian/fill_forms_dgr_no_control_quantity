@@ -195,9 +195,7 @@ def submit_form_and_generate_talon(driver, bucket_id, bucket_type):
                 }
                 collection_status.insert_one(status_waiting)
                 logger.info(f"Inserted waiting_lambda status for bucket_id {bucket_id}")
-
             
-            logger.info(f"Inserted document en status con id: {result.inserted_id}")
         except Exception as e:
             logger.error(f"ERROR al subir el PDF a S3 o insertar status: {e}")
             return { 'statusCode': 500, 'body': json.dumps({'ERROR': f"Error al subir PDF o insertar estado: {e}"}) }
